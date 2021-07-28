@@ -3,10 +3,10 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RollForward>Major</RollForward>
-    <ToolCommandName>fantomas</ToolCommandName>
+    <ToolCommandName>fantomless</ToolCommandName>
     <PackAsTool>True</PackAsTool>
     <Version>4.4.0</Version>
-    <AssemblyName>fantomas-tool</AssemblyName>
+    <AssemblyName>fantomless-tool</AssemblyName>
     <WarningsAsErrors>FS0025</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>

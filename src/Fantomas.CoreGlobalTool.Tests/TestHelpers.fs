@@ -107,7 +107,7 @@ let runFantomasTool arguments =
             "bin",
             configuration,
             "netcoreapp3.1",
-            "fantomas-tool.dll"
+            "fantomless-tool.dll"
         )
 
     use p = new Process()
