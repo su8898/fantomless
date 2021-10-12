@@ -3243,6 +3243,13 @@ and genExprInIfOrMatch astContext (e: SynExpr) (ctx: Context) : Context =
         let indentNlnUnindentNln f =
             indent +> sepNln +> f +> unindent +> sepNln
 
+        let fallback =
+            if hasCommentBeforeExpr e then
+                genExpr astContext e |> indentNlnUnindentNln
+            else
+                sepNlnWhenWriteBeforeNewlineNotEmpty sepNone
+                +> genExpr astContext e
+
         match e with
         | App (SynExpr.DotGet _, [ (Paren _) ]) -> atCurrentColumn (genExpr astContext e)
         | Paren (lpr, (AppSingleParenArg _ as ate), rpr, pr) ->
@@ -3285,22 +3292,13 @@ and genExprInIfOrMatch astContext (e: SynExpr) (ctx: Context) : Context =
                              +> sepCloseTFor rpr pr
                          | _ -> genExpr astContext e)))
             |> indentNlnUnindentNln
-        | InfixApp _ ->
-            // Note: This code is the same as the fallback case
-            if hasCommentBeforeExpr e then
-                genExpr astContext e |> indentNlnUnindentNln
-            else
-                sepNlnWhenWriteBeforeNewlineNotEmpty sepNone
-                +> genExpr astContext e
+        | InfixApp _ -> fallback
         | App (SynExpr.Ident _, _)
         | App (SynExpr.LongIdent _, _) ->
-            if hasCommentBeforeExpr e then
-                genExpr astContext e |> indentNlnUnindentNln
-            else
-                (indent
-                 +> sepNln
-                 +> genExpr astContext e
-                 +> unindent)
+            (indent
+             +> sepNln
+             +> genExpr astContext e
+             +> unindent)
         | SynExpr.Match _
         | SynExpr.MatchBang _
         | SynExpr.TryWith _
@@ -3317,12 +3315,7 @@ and genExprInIfOrMatch astContext (e: SynExpr) (ctx: Context) : Context =
             +> unindent
             |> genTriviaFor SynExpr_DotGet e.Range
             |> indentNlnUnindentNln
-        | _ ->
-            if hasCommentBeforeExpr e then
-                genExpr astContext e |> indentNlnUnindentNln
-            else
-                sepNlnWhenWriteBeforeNewlineNotEmpty sepNone
-                +> genExpr astContext e
+        | _ -> fallback
 
     expressionFitsOnRestOfLine short long ctx
 

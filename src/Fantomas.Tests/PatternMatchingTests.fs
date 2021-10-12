@@ -2034,3 +2034,25 @@ match
 | None -> false
 | Some balance -> someRetrievedBalance = balance
 """
+
+[<Test>]
+let ``vanity alignment used when splitting line in match block, match bang, 1901`` () =
+    formatSourceString
+        false
+        """
+match! Caching.Instance.TryRetrieveLastCompoundBalanceLoooooooooooooooooooooooooooooooooooooooooooongFuncName address currency with
+| None -> false
+| Some balance -> someRetrievedBalance = balance"""
+        config
+    |> prepend newline
+    |> should
+        equal
+        """
+match!
+    Caching.Instance.TryRetrieveLastCompoundBalanceLoooooooooooooooooooooooooooooooooooooooooooongFuncName
+        address
+        currency
+    with
+| None -> false
+| Some balance -> someRetrievedBalance = balance
+"""
