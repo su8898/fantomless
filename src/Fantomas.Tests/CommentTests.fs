@@ -1683,3 +1683,24 @@ module Foo =
             return blockForConfirmationReference
         }
 """
+
+[<Test>]
+let ``should not move the starting point of a multi-line comment (2), 1223`` () =
+    formatSourceString
+        false
+        """
+module Foo =
+    let! blockForConfirmationReference = GetBlockToCheckForConfirmedBalance web3
+(* test *)
+    return blockForConfirmationReference
+"""
+        config
+    |> prepend newline
+    |> should
+        equal
+        """
+module Foo =
+    let! blockForConfirmationReference = GetBlockToCheckForConfirmedBalance web3
+(* test *)
+    return blockForConfirmationReference
+"""

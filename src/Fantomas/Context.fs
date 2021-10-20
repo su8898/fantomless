@@ -1170,12 +1170,39 @@ let internal printTriviaContent (c: TriviaContent) (ctx: Context) =
             sprintf "%s%s" (if addSpace then " " else String.empty) s
 
         writerEvent (WriteBeforeNewline comment)
-    | Comment (BlockComment (s, before, after)) ->
-        ifElse (before && addNewline) sepNlnForTrivia sepNone
-        +> sepSpace
-        -- s
-        +> sepSpace
-        +> ifElse after sepNlnForTrivia sepNone
+    | Comment (BlockComment (s, before, after, commentRange)) ->
+        if (commentRange.StartColumn = 0) then
+            let printa alsoSetIndent level (f: Context -> Context) ctx =
+                let m = ctx.WriterModel
+                let oldIndent = m.Indent
+                let oldColumn = m.AtColumn
+
+                (writerEvent (SetAtColumn level)
+                 >> writerEvent (SetIndent level)
+                 >> f
+                 >> writerEvent (RestoreAtColumn oldColumn)
+                 >> writerEvent (RestoreIndent oldIndent))
+                    ctx
+
+            let comment =
+                sprintf
+                    "%s%s%s"
+                    (if addSpace then " " else String.empty)
+                    (if before && addNewline then
+                         "\n"
+                     else
+                         String.empty)
+                    s
+
+            printa true 0 (writerEvent (Write comment))
+            +> sepSpace
+            +> ifElse after sepNlnForTrivia sepNone
+        else
+            ifElse (before && addNewline) sepNlnForTrivia sepNone
+            +> sepSpace
+            -- s
+            +> sepSpace
+            +> ifElse after sepNlnForTrivia sepNone
     | Comment (LineCommentOnSingleLine (s, commentRange)) ->
         (ifElse addNewline sepNlnForTrivia sepNone)
         +> ifElse (ctx.WriterModel.Indent = 0) (rep commentRange.StartColumn !- " ") sepNone
