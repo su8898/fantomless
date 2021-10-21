@@ -319,6 +319,13 @@ let private addTriviaToTriviaNode
             |> updateTriviaNode
                 (fun tn -> tn.ContentAfter.Add(Comment(BlockComment(comment, false, false, range))))
                 triviaNodes
+        | Some nb, Some n when (nb.Range.EndLine > range.StartLine) ->
+            Some n
+            |> updateTriviaNode
+                (fun tn ->
+                    let newline = tn.Range.StartLine > range.EndLine
+                    tn.ContentBefore.Add(Comment(BlockComment(comment, true, newline, range))))
+                triviaNodes
         | _, Some n ->
             Some n
             |> updateTriviaNode

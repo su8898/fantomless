@@ -1171,43 +1171,42 @@ let internal printTriviaContent (c: TriviaContent) (ctx: Context) =
 
         writerEvent (WriteBeforeNewline comment)
     | Comment (BlockComment (blockComment, before, after, commentRange)) ->
-        if commentRange.StartColumn = 0 then
-            let addNewline2 =
-                currentLastLine
-                |> Option.map (fun line -> line.Length > 0)
-                |> Option.defaultValue false
+        let printAtZeroIndent (f: Context -> Context) ctx =
+            let writerModel = ctx.WriterModel
+            let oldIndent = writerModel.Indent
+            let oldColumn = writerModel.AtColumn
 
-            let printa alsoSetIndent level (f: Context -> Context) ctx =
-                let writerModel = ctx.WriterModel
-                let oldIndent = writerModel.Indent
-                let oldColumn = writerModel.AtColumn
+            (writerEvent (SetAtColumn 0)
+             >> writerEvent (SetIndent 0)
+             >> f
+             >> writerEvent (RestoreAtColumn oldColumn)
+             >> writerEvent (RestoreIndent oldIndent))
+                ctx
 
-                (writerEvent (SetAtColumn level)
-                 >> writerEvent (SetIndent level)
-                 >> f
-                 >> writerEvent (RestoreAtColumn oldColumn)
-                 >> writerEvent (RestoreIndent oldIndent))
-                    ctx
+        let printComment =
+            if before && addNewline then
+                (String.replicate (commentRange.StartColumn) " ")
+            else
+                String.empty
 
-            let comment =
-                sprintf
-                    "%s%s%s"
-                    (if before && addNewline2 then
-                         "\n"
-                     else
-                         String.empty)
-                    (String.replicate commentRange.StartColumn " ")
-                    blockComment
+        let printNewLn =
+            if before && addNewline then
+                "\n"
+            else
+                String.empty
 
-            printa true 0 (writerEvent (Write comment))
-            +> sepSpace
-            +> ifElse after sepNlnForTrivia sepNone
-        else
-            ifElse (before && addNewline) sepNlnForTrivia sepNone
-            +> sepSpace
-            -- blockComment
-            +> sepSpace
-            +> ifElse after sepNlnForTrivia sepNone
+        let comment =
+            sprintf "%s%s%s" printNewLn printComment blockComment
+
+        ifElse
+            (before && addNewline)
+            (printAtZeroIndent (writerEvent (WriteBeforeNewline comment)))
+            (printAtZeroIndent (
+                sepSpace
+                +> writerEvent (Write comment)
+                +> sepSpace
+            ))
+        +> ifElse after sepNlnForTrivia sepNone
     | Comment (LineCommentOnSingleLine (s, commentRange)) ->
         (ifElse addNewline sepNlnForTrivia sepNone)
         +> ifElse (ctx.WriterModel.Indent = 0) (rep commentRange.StartColumn !- " ") sepNone
