@@ -1725,3 +1725,88 @@ module Foo =
         (* test *)
     return blockForConfirmationReference
 """
+
+[<Test>]
+let ``code should not produce SO error`` () =
+    formatSourceString
+        false
+        """
+module Networking =
+    let FindExceptionToRethrow (ex: Exception) msg : Option<Exception> =
+        match FSharpUtil.FindException<SoEx> ex with
+        | None -> None
+        | Some SoEx ->
+            if SoEx.Code = int SoErr.ConnectionRefused then
+                ServerRefusedException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.ConnectionReset then
+                ServerRefusedException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.TimedOut then
+                ServerTimedOutException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.AddressFamilyNotSupported then
+                ServerUnreachableException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.SoErr
+                 && SoEx.Message.Contains "mono-io-layer-error" then
+                ServerUnreachableException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.HostUnreachable then
+                ServerUnreachableException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.NetworkUnreachable then
+                ServerUnreachableException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.AddressNotAvailable then
+                ServerUnreachableException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.Shutdown then
+                ServerClosedConnectionEarlyException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.InvalidArgument then
+                BuggyExceptionFromOldMonoVersion(msg, ex) :> Exception
+                |> Some
+"""
+        config
+    |> prepend newline
+    |> should
+        equal
+        """
+module Networking =
+    let FindExceptionToRethrow (ex: Exception) msg : Option<Exception> =
+        match FSharpUtil.FindException<SoEx> ex with
+        | None -> None
+        | Some SoEx ->
+            if SoEx.Code = int SoErr.ConnectionRefused then
+                ServerRefusedException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.ConnectionReset then
+                ServerRefusedException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.TimedOut then
+                ServerTimedOutException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.AddressFamilyNotSupported then
+                ServerUnreachableException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.SoErr
+                 && SoEx.Message.Contains "mono-io-layer-error" then
+                ServerUnreachableException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.HostUnreachable then
+                ServerUnreachableException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.NetworkUnreachable then
+                ServerUnreachableException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.AddressNotAvailable then
+                ServerUnreachableException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.Shutdown then
+                ServerClosedConnectionEarlyException(msg, ex) :> Exception
+                |> Some
+            elif SoEx.Code = int SoErr.InvalidArgument then
+                BuggyExceptionFromOldMonoVersion(msg, ex) :> Exception
+                |> Some
+"""
