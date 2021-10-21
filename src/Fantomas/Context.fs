@@ -1200,7 +1200,7 @@ let internal printTriviaContent (c: TriviaContent) (ctx: Context) =
 
         ifElse
             (before && addNewline)
-            (printAtZeroIndent (writerEvent (WriteBeforeNewline comment)))
+            (printAtZeroIndent (writerEvent (Write comment)))
             (printAtZeroIndent (
                 sepSpace
                 +> writerEvent (Write comment)
