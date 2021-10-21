@@ -88,8 +88,6 @@ let private findMemberDefnMemberNodeOnLine (nodes: TriviaNodeAssigner list) line
             | _ -> false)
 
 let private findNodeBeforeLineAndColumn (nodes: TriviaNodeAssigner list) line column =
-    let ln = line
-
     let node =
         nodes
         |> List.tryFindBack

@@ -1170,12 +1170,17 @@ let internal printTriviaContent (c: TriviaContent) (ctx: Context) =
             sprintf "%s%s" (if addSpace then " " else String.empty) s
 
         writerEvent (WriteBeforeNewline comment)
-    | Comment (BlockComment (s, before, after, commentRange)) ->
-        if (commentRange.StartColumn = 0) then
+    | Comment (BlockComment (blockComment, before, after, commentRange)) ->
+        if commentRange.StartColumn = 0 then
+            let addNewline2 =
+                currentLastLine
+                |> Option.map (fun line -> line.Length > 0)
+                |> Option.defaultValue false
+
             let printa alsoSetIndent level (f: Context -> Context) ctx =
-                let m = ctx.WriterModel
-                let oldIndent = m.Indent
-                let oldColumn = m.AtColumn
+                let writerModel = ctx.WriterModel
+                let oldIndent = writerModel.Indent
+                let oldColumn = writerModel.AtColumn
 
                 (writerEvent (SetAtColumn level)
                  >> writerEvent (SetIndent level)
@@ -1187,12 +1192,12 @@ let internal printTriviaContent (c: TriviaContent) (ctx: Context) =
             let comment =
                 sprintf
                     "%s%s%s"
-                    (if addSpace then " " else String.empty)
-                    (if before && addNewline then
+                    (if before && addNewline2 then
                          "\n"
                      else
                          String.empty)
-                    s
+                    (String.replicate commentRange.StartColumn " ")
+                    blockComment
 
             printa true 0 (writerEvent (Write comment))
             +> sepSpace
@@ -1200,7 +1205,7 @@ let internal printTriviaContent (c: TriviaContent) (ctx: Context) =
         else
             ifElse (before && addNewline) sepNlnForTrivia sepNone
             +> sepSpace
-            -- s
+            -- blockComment
             +> sepSpace
             +> ifElse after sepNlnForTrivia sepNone
     | Comment (LineCommentOnSingleLine (s, commentRange)) ->
