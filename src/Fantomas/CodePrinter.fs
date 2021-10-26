@@ -4934,10 +4934,22 @@ and genPat astContext pat =
                     | _ -> true
                 | _ -> true
 
-        ifElse isParenNecessary sepOpenT sepSpace
-        +> genPat astContext p
-        +> enterNodeTokenByName pat.Range RPAREN
-        +> ifElse isParenNecessary sepCloseT sepNone
+        expressionFitsOnRestOfLine
+            (ifElse isParenNecessary sepOpenT sepSpace
+             +> genPat astContext p
+             +> enterNodeTokenByName pat.Range RPAREN
+             +> ifElse isParenNecessary sepCloseT sepNone)
+
+            (ifElse
+                astContext.IsInsideMatchClausePattern
+                (ifElse isParenNecessary ((indent +> sepNln +> sepOpenT +> indent +> sepNln)) sepNone)
+                (ifElse isParenNecessary sepOpenT sepSpace)
+             +> genPat astContext p
+             +> enterNodeTokenByName pat.Range RPAREN
+             +> (ifElse
+                     astContext.IsInsideMatchClausePattern
+                     (ifElse isParenNecessary (unindent +> sepNln +> sepCloseT +> unindent) sepNone)
+                     (ifElse isParenNecessary sepCloseT sepNone)))
     | PatTuple ps ->
         expressionFitsOnRestOfLine
             (col sepComma ps (genPat astContext))
